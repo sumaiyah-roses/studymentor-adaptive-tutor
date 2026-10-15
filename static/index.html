@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Companion - AI Source-Grounded Tutor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --primary-border: #c7d2fe;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --success-border: #a7f3d0;
+      --danger: #ef4444;
+      --danger-light: #fef2f2;
+      --danger-border: #fecaca;
+      --warning: #f59e0b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+      --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px 16px; line-height: 1.5; }
+    .container { max-width: 940px; margin: 0 auto; }
+    
+    /* Header */
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--card-border); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #4f46e5, #7c3aed); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 20px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+    .brand-title { font-size: 20px; font-weight: 700; color: var(--text); }
+    .brand-subtitle { font-size: 13px; color: var(--text-muted); }
+    .header-status { display: flex; align-items: center; gap: 8px; font-size: 13px; background: var(--surface); padding: 6px 14px; border-radius: 9999px; border: 1px solid var(--card-border); color: var(--text-muted); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+    
+    /* Tabs */
+    nav.tabs { display: flex; gap: 8px; background: #f1f5f9; padding: 6px; border-radius: var(--radius-md); margin-bottom: 24px; }
+    .tab-btn { flex: 1; border: none; background: transparent; padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease; }
+    .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.6); }
+    .tab-btn.active { background: var(--surface); color: var(--primary); box-shadow: var(--shadow-sm); }
+    
+    /* Views */
+    .tab-view { display: none; }
+    .tab-view.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Cards */
+    .card { background: var(--surface); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    
+    /* Buttons */
+    .btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--card-border); }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .btn-danger { background: var(--danger-light); color: var(--danger); border-color: var(--danger-border); }
+    .btn-danger:hover { background: #fee2e2; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+    /* Upload Area */
+    .upload-zone { border: 2px dashed #cbd5e1; border-radius: var(--radius-lg); padding: 36px 20px; text-align: center; background: #fafafa; transition: all 0.2s; cursor: pointer; }
+    .upload-zone:hover { border-color: var(--primary); background: var(--primary-light); }
+    .upload-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+    .supported-badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 9999px; background: #f1f5f9; color: var(--text-muted); border: 1px solid var(--card-border); }
+    .badge-primary { background: var(--primary-light); color: var(--primary); border-color: var(--primary-border); }
+    .badge-success { background: var(--success-light); color: var(--success); border-color: var(--success-border); }
+    .file-input { display: none; }
+    
+    /* Quick Action Pills */
+    .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .chip { background: var(--primary-light); color: var(--primary); font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 9999px; border: 1px solid var(--primary-border); cursor: pointer; transition: all 0.15s; }
+    .chip:hover { background: var(--primary); color: white; transform: translateY(-1px); }
+    
+    /* Chat Container */
+    .chat-box { display: flex; flex-direction: column; height: 600px; background: var(--surface); border: 1px solid var(--card-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .chat-input-bar { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--card-border); background: var(--surface); }
+    .chat-input { flex: 1; border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 10px 16px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .chat-input:focus { border-color: var(--primary); ring: 2px solid var(--primary-light); }
+    
+    /* Message Bubbles */
+    .msg { display: flex; flex-direction: column; max-width: 85%; animation: fadeIn 0.2s; }
+    .msg-user { align-self: flex-end; }
+    .msg-user .msg-content { background: var(--primary); color: white; border-radius: 18px 18px 4px 18px; padding: 12px 18px; font-size: 14.5px; }
+    .msg-tutor { align-self: flex-start; max-width: 92%; }
+    .msg-tutor .msg-content { background: #f8fafc; border: 1px solid var(--card-border); border-radius: 18px 18px 18px 4px; padding: 16px 20px; font-size: 14.5px; line-height: 1.6; color: var(--text); }
+    .msg-tutor.outside .msg-content { background: #fffbeb; border-color: #fde68a; }
+    .msg-header { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+    .citation-list { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .citation-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; background: #e0e7ff; color: var(--primary); text-decoration: none; padding: 3px 10px; border-radius: 9999px; transition: background 0.15s; }
+    .citation-link:hover { background: #c7d2fe; text-decoration: underline; }
+    
+    /* In-chat Question Widget */
+    .embedded-quiz { margin-top: 14px; background: var(--surface); border: 1.5px solid var(--primary-border); border-radius: var(--radius-md); padding: 16px; box-shadow: var(--shadow-sm); }
+    .embedded-quiz-title { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+    .embedded-quiz-q { font-weight: 600; font-size: 14px; margin-bottom: 12px; color: var(--text); }
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .option-btn { text-align: left; background: #f8fafc; border: 1px solid var(--card-border); padding: 9px 14px; border-radius: var(--radius-sm); font-size: 13.5px; cursor: pointer; transition: all 0.15s; color: var(--text); }
+    .option-btn:hover { background: var(--primary-light); border-color: var(--primary-border); }
+    .option-btn.selected { background: #e0e7ff; border-color: var(--primary); font-weight: 600; color: var(--primary); }
+    .quiz-feedback { margin-top: 10px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13.5px; }
+    .quiz-feedback.correct { background: var(--success-light); border: 1px solid var(--success-border); color: #065f46; }
+    .quiz-feedback.incorrect { background: var(--danger-light); border: 1px solid var(--danger-border); color: #991b1b; }
+    
+    /* Quiz View Cards */
+    .quiz-item-card { background: var(--surface); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .quiz-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .quiz-card-q { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+    
+    /* Progress Bars & Dashboard */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--card-border); border-radius: var(--radius-md); padding: 18px; text-align: center; box-shadow: var(--shadow-sm); }
+    .kpi-num { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .kpi-label { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+    
+    .topic-row { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; }
+    .topic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .topic-name { font-weight: 700; font-size: 15px; color: var(--text); }
+    .topic-stat { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+    .progress-track { height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 9999px; transition: width 0.6s ease; background: linear-gradient(9deg, #10b981, #059669); }
+    .progress-fill.amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .progress-fill.blue { background: linear-gradient(90deg, #6366f1, #4f46e5); }
+    .prereqs-tag { font-size: 12px; color: var(--text-light); margin-top: 6px; }
+    
+    /* Loading spinner */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+    .spinner-dark { border: 2px solid rgba(0,0,0,0.1); border-top-color: var(--primary); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🎓</div>
+        <div>
+          <div class="brand-title">Study Companion</div>
+          <div class="brand-subtitle">Source-Grounded AI Tutor, Adaptive Quizzes & Bayesian Learner</div>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        <span id="status-pill">Ready</span>
+      </div>
+    </header>
+
+    <!-- Nav Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" onclick="showTab('up')">📤 Upload Material</button>
+      <button class="tab-btn" onclick="showTab('chat')">🧑‍🏫 Tutor & Explain</button>
+      <button class="tab-btn" onclick="showTab('quiz')">📝 Adaptive Quiz</button>
+      <button class="tab-btn" onclick="showTab('dash')">📊 Learner Dashboard</button>
+    </nav>
+
+    <!-- TAB 1: UPLOAD -->
+    <div id="view-up" class="tab-view active">
+      <div class="card">
+        <div class="card-title">Upload & Ingest Study Material</div>
+        <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
+          Upload your documents to build a verified knowledge base. The AI will extract text, chunk and index it via BM25, and generate an adaptive topic curriculum.
+        </p>
+        
+        <div class="upload-zone" onclick="$('file').click()">
+          <span class="upload-icon">📂</span>
+          <div style="font-weight:700; font-size:16px; margin-bottom:4px;">Click to select file or drag & drop</div>
+          <div style="font-size:13px; color:var(--text-muted);" id="file-label">Supported formats: Word DOCX, PDF, PPTX, MP4/MP3, TXT</div>
+          <div class="supported-badges">
+            <span class="badge">.DOCX (Word)</span>
+            <span class="badge">.PDF</span>
+            <span class="badge">.PPTX</span>
+            <span class="badge">.TXT</span>
+            <span class="badge">Audio/Video (≤25MB)</span>
+          </div>
+        </div>
+        <input type="file" id="file" class="file-input" onchange="onFileSelected()">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+          <button class="btn btn-primary" id="btn-ingest" onclick="handleUpload()" disabled>
+            <span>Ingest & Tag Curriculum</span>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="handleClearDb()">
+            <span>🗑 Reset Knowledge Base</span>
+          </button>
+        </div>
+
+        <div id="upload-status" style="margin-top:16px; display:none;"></div>
+      </div>
+
+      <div class="card" id="ingested-summary">
+        <div class="card-title">
+          <span>Active Knowledge Base</span>
+          <button class="btn btn-secondary btn-sm" onclick="refreshStatus()">↻ Refresh</button>
+        </div>
+        <div id="kb-details" style="font-size:14px; color:var(--text-muted);">
+          Loading knowledge base status...
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TUTOR & EXPLAIN -->
+    <div id="view-chat" class="tab-view">
+      <div class="chat-box">
+        <div style="padding:12px 18px; background:#f8fafc; border-bottom:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:13px; font-weight:700; color:var(--text-muted);">Grounded Tutor (Strict Citations)</div>
+          <div class="quick-actions" style="margin:0;">
+            <span class="chip" onclick="quickPrompt('Explain this document to me in detail')">💡 Explain Document</span>
+            <span class="chip" onclick="quickPrompt('What are the main concepts and findings?')">📌 Main Concepts</span>
+            <span class="chip" onclick="quickPrompt('quiz me')">🎯 Quiz Me</span>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg msg-tutor">
+            <div class="msg-header">🤖 Study Companion Tutor</div>
+            <div class="msg-content">
+              Hello! I am your source-grounded tutor. Ask me to explain any topic from your uploaded materials, or click <b>"Explain Document"</b> above. I will ground my answers in your sources and provide practice questions along the way!
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Ask a question, or type 'explain' or 'quiz me'..." onkeydown="if(event.key==='Enter')handleSendChat()">
+          <button class="btn btn-primary" id="btn-send" onclick="handleSendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: QUIZ -->
+    <div id="view-quiz" class="tab-view">
+      <div class="card">
+        <div class="card-title">Adaptive Diagnostic Quiz</div>
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:8px;">
+          <label style="font-size:14px; font-weight:600;">
+            Number of Questions:
+            <input type="number" id="quiz-n" value="5" min="1" max="10" style="width:60px; padding:6px; border:1px solid var(--card-border); border-radius:6px; margin-left:6px;">
+          </label>
+          <button class="btn btn-primary" id="btn-gen-quiz" onclick="generateQuiz()">
+            <span>🎯 Generate Quiz</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="quiz-container"></div>
+    </div>
+
+    <!-- TAB 4: DASHBOARD -->
+    <div id="view-dash" class="tab-view">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-num" id="kpi-topics">0</div>
+          <div class="kpi-label">Active Topics</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num" id="kpi-chunks">0</div>
+          <div class="kpi-label">Source Chunks</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num" id="kpi-answers">0</div>
+          <div class="kpi-label">Questions Solved</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-num" id="kpi-mastery">30%</div>
+          <div class="kpi-label">Avg. Mastery</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Topic Mastery (Bayesian Knowledge Tracing)</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+        </div>
+        <div id="topic-list">Loading topics...</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Identified Misconceptions & Diagnostics</div>
+        <div id="misconceptions-list" style="font-size:14px; color:var(--text-muted);">
+          No misconceptions detected yet. Solve quiz questions to trigger diagnostic evaluation.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const api = (url, body, method = 'POST') => fetch(url, {
+      method: body ? method : 'GET',
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined
+    }).then(r => r.json());
+
+    // Navigation
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      const view = $('view-' + tabId);
+      if (view) view.classList.add('active');
+      if (tabId === 'dash') loadDashboard();
+      if (tabId === 'up') refreshStatus();
+    }
+
+    // Status & KB Refresh
+    async function refreshStatus() {
+      try {
+        const s = await api('/api/status', null, 'GET');
+        $('status-pill').textContent = s.chunks > 0 ? `${s.chunks} chunks • ${s.topics} topics` : 'No files ingested';
+        const kb = $('kb-details');
+        if (s.files && s.files.length) {
+          kb.innerHTML = `
+            <div style="margin-bottom:10px;">
+              <b>Uploaded Documents:</b> ${s.files.map(f => `<span class="badge badge-primary" style="margin-right:6px;">${f}</span>`).join('')}
+            </div>
+            <div><b>Statistics:</b> ${s.chunks} text chunks indexed, ${s.topics} curriculum topics, ${s.attempts} quiz responses recorded.</div>
+            <div style="margin-top:14px; display:flex; gap:10px;">
+              <button class="btn btn-primary btn-sm" onclick="showTab('chat'); quickPrompt('Explain this document to me');">✨ Explain This Document</button>
+              <button class="btn btn-secondary btn-sm" onclick="showTab('quiz'); generateQuiz();">📝 Start Quiz</button>
+            </div>
+          `;
+        } else {
+          kb.innerHTML = 'No files ingested yet. Please choose a file above and click Ingest.';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // File selection
+    function onFileSelected() {
+      const f = $('file').files[0];
+      if (f) {
+        $('file-label').innerHTML = `<b>Selected:</b> ${f.name} (${(f.size/1024).toFixed(1)} KB)`;
+        $('btn-ingest').disabled = false;
+      }
+    }
+
+    // Upload & Ingest
+    async function handleUpload() {
+      const f = $('file').files[0];
+      if (!f) return;
+      const statusDiv = $('upload-status');
+      statusDiv.style.display = 'block';
+      statusDiv.className = 'card';
+      statusDiv.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"><div class="spinner spinner-dark"></div><div><b>Ingesting & Tagging Topics...</b> Extracting content and creating curriculum graph. Please wait.</div></div>';
+      $('btn-ingest').disabled = true;
+
+      const fd = new FormData();
+      fd.append('file', f);
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: fd }).then(r => r.json());
+        statusDiv.innerHTML = `
+          <div style="color:var(--success); font-weight:700; margin-bottom:6px;">✔ Ingestion Successful!</div>
+          <div style="font-size:14px; margin-bottom:12px;">Ingested <b>${res.chunks}</b> chunks from <code>${f.name}</code> and automatically tagged topics.</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="showTab('chat'); quickPrompt('Explain this document to me');">✨ Explain Document Now</button>
+            <button class="btn btn-secondary btn-sm" onclick="showTab('quiz'); generateQuiz();">🎯 Start Quiz</button>
+          </div>
+        `;
+        refreshStatus();
+      } catch (err) {
+        statusDiv.innerHTML = `<div style="color:var(--danger); font-weight:700;">✘ Ingestion failed: ${err.message || 'Server error'}</div>`;
+      } finally {
+        $('btn-ingest').disabled = false;
+      }
+    }
+
+    // Reset Knowledge Base
+    async function handleClearDb() {
+      if (!confirm('Are you sure you want to clear the entire knowledge base and uploaded files?')) return;
+      try {
+        await api('/api/clear', {});
+        alert('Knowledge base cleared.');
+        refreshStatus();
+      } catch (e) {
+        alert('Failed to clear: ' + e);
+      }
+    }
+
+    // Quick Prompts
+    function quickPrompt(text) {
+      $('chat-input').value = text;
+      handleSendChat();
+    }
+
+    // Format Markdown Text
+    function formatMarkdown(txt) {
+      if (!txt) return '';
+      let escaped = txt
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+      
+      // Bold
+      escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      // Inline Code
+      escaped = escaped.replace(/`([^`]+)`/g, '<code style="background:#f1f5f9; padding:2px 5px; border-radius:4px; font-size:13px;">$1</code>');
+      // Line breaks
+      escaped = escaped.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+      return escaped;
+    }
+
+    // Chat Handler
+    async function handleSendChat() {
+      const input = $('chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+
+      const container = $('chat-messages');
+
+      // Append user bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'msg msg-user';
+      userBubble.innerHTML = `<div class="msg-content">${formatMarkdown(msg)}</div>`;
+      container.appendChild(userBubble);
+
+      // Append loading bubble
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'msg msg-tutor';
+      loadingBubble.innerHTML = `
+        <div class="msg-header">🤖 Study Companion Tutor</div>
+        <div class="msg-content" style="display:flex; align-items:center; gap:10px;">
+          <div class="spinner spinner-dark"></div>
+          <span>Thinking, grounding in sources, and preparing questions...</span>
+        </div>
+      `;
+      container.appendChild(loadingBubble);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const res = await api('/api/chat', { message: msg });
+        container.removeChild(loadingBubble);
+
+        if (res.route === 'quiz') {
+          showTab('quiz');
+          generateQuiz();
+          return;
+        }
+
+        // Render Tutor response
+        const tutorBubble = document.createElement('div');
+        tutorBubble.className = 'msg msg-tutor' + (res.grounded ? '' : ' outside');
+        
+        let html = `
+          <div class="msg-header">
+            <span>🤖 Study Companion Tutor</span>
+            <span class="badge ${res.grounded ? 'badge-success' : 'badge-primary'}">${res.grounded ? 'Source Grounded' : 'General Knowledge'}</span>
+          </div>
+          <div class="msg-content">
+            <div>${formatMarkdown(res.answer)}</div>
+        `;
+
+        // Citations
+        if (res.citations && res.citations.length) {
+          html += '<div class="citation-list">';
+          res.citations.forEach(c => {
+            html += `<a href="${c.url}" target="_blank" class="citation-link">📄 [${c.n || ''} ${c.source}, ${c.loc}]</a>`;
+          });
+          html += '</div>';
+        }
+
+        // Attached Check-for-Understanding Question!
+        if (res.question) {
+          const q = res.question;
+          html += `
+            <div class="embedded-quiz" id="emb-q-${q.id}">
+              <div class="embedded-quiz-title">
+                <span>💡 CHECK YOUR UNDERSTANDING</span>
+                <span class="badge badge-primary">${q.topic} · ${q.difficulty}</span>
+              </div>
+              <div class="embedded-quiz-q">${formatMarkdown(q.q)}</div>
+              <div class="quiz-options">
+          `;
+          q.options.forEach((opt, idx) => {
+            const letter = ['A','B','C','D'][idx] || String.fromCharCode(65 + idx);
+            html += `<button class="option-btn" onclick="selectOption(this, ${q.id}, '${letter}')">${opt}</button>`;
+          });
+          html += `
+              </div>
+              <button class="btn btn-primary btn-sm" id="sub-emb-${q.id}" onclick="submitEmbeddedAnswer(${q.id})" disabled>Submit Answer</button>
+              <div id="fb-emb-${q.id}" class="quiz-feedback" style="display:none;"></div>
+            </div>
+          `;
+        }
+
+        html += '</div>';
+        tutorBubble.innerHTML = html;
+        container.appendChild(tutorBubble);
+        container.scrollTop = container.scrollHeight;
+      } catch (err) {
+        if (loadingBubble.parentNode) container.removeChild(loadingBubble);
+        const errBubble = document.createElement('div');
+        errBubble.className = 'msg msg-tutor';
+        errBubble.innerHTML = `<div class="msg-content" style="color:var(--danger);">Error: ${err.message}</div>`;
+        container.appendChild(errBubble);
+      }
+    }
+
+    // Option Selection for embedded question
+    const selectedAnswers = {};
+    function selectOption(btn, qid, val) {
+      const parent = btn.closest('.quiz-options');
+      parent.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedAnswers[qid] = val;
+      const subBtn = $('sub-emb-' + qid) || $('sub-q-' + qid);
+      if (subBtn) subBtn.disabled = false;
+    }
+
+    // Submit Embedded Answer
+    async function submitEmbeddedAnswer(qid) {
+      const val = selectedAnswers[qid];
+      if (!val) return;
+      const subBtn = $('sub-emb-' + qid);
+      if (subBtn) subBtn.disabled = true;
+
+      try {
+        const res = await api('/api/answer', { qid: qid, response: val });
+        const fb = $('fb-emb-' + qid);
+        fb.style.display = 'block';
+        if (res.correct) {
+          fb.className = 'quiz-feedback correct';
+          fb.innerHTML = `<b>✔ Correct!</b> ${res.feedback || ''} <span style="float:right; font-weight:700;">Mastery: ${(res.mastery*100).toFixed(0)}%</span>`;
+        } else {
+          fb.className = 'quiz-feedback incorrect';
+          fb.innerHTML = `<b>✘ Incorrect.</b> Correct answer: <b>${res.answer}</b>. ${res.feedback || ''} <span style="float:right; font-weight:700;">Mastery: ${(res.mastery*100).toFixed(0)}%</span>`;
+        }
+        refreshStatus();
+      } catch (e) {
+        alert('Failed to submit answer: ' + e);
+      }
+    }
+
+    // Generate Quiz in Quiz tab
+    async function generateQuiz() {
+      const qc = $('quiz-container');
+      const n = +$('quiz-n').value || 5;
+      qc.innerHTML = '<div class="card" style="text-align:center; padding:32px;"><div class="spinner spinner-dark" style="width:28px; height:28px; margin-bottom:12px;"></div><div><b>Generating & Verifying Questions...</b> Creating adaptive diagnostic questions from your sources.</div></div>';
+      $('btn-gen-quiz').disabled = true;
+
+      try {
+        const qs = await api('/api/quiz', { n: n });
+        if (!qs || !qs.length) {
+          qc.innerHTML = '<div class="card" style="text-align:center; padding:24px;"><b>No verified questions could be generated.</b><p style="color:var(--text-muted); margin-top:6px;">Please upload more study materials or retry.</p></div>';
+          return;
+        }
+
+        let html = '';
+        qs.forEach((q, i) => {
+          html += `
+            <div class="quiz-item-card" id="card-q-${q.id}">
+              <div class="quiz-card-meta">
+                <span class="badge badge-primary">Question ${i + 1} of ${qs.length}</span>
+                <span class="badge">${q.topic}</span>
+                <span class="badge">${q.difficulty}</span>
+                <span style="font-size:12px; color:var(--text-muted); margin-left:auto;">Source: ${q.source}, ${q.loc}</span>
+              </div>
+              <div class="quiz-card-q">${formatMarkdown(q.q)}</div>
+              <div class="quiz-options">
+          `;
+          q.options.forEach((opt, idx) => {
+            const letter = ['A','B','C','D'][idx] || String.fromCharCode(65 + idx);
+            html += `<button class="option-btn" onclick="selectOption(this, ${q.id}, '${letter}')">${opt}</button>`;
+          });
+          html += `
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn btn-primary btn-sm" id="sub-q-${q.id}" onclick="submitQuizAnswer(${q.id})" disabled>Submit Answer</button>
+                <div id="fb-q-${q.id}" class="quiz-feedback" style="display:none; flex:1; margin-left:14px; margin-top:0;"></div>
+              </div>
+            </div>
+          `;
+        });
+        qc.innerHTML = html;
+      } catch (err) {
+        qc.innerHTML = `<div class="card" style="color:var(--danger);">Error generating quiz: ${err.message}</div>`;
+      } finally {
+        $('btn-gen-quiz').disabled = false;
+      }
+    }
+
+    // Submit Answer in Quiz tab
+    async function submitQuizAnswer(qid) {
+      const val = selectedAnswers[qid];
+      if (!val) return;
+      const subBtn = $('sub-q-' + qid);
+      if (subBtn) subBtn.disabled = true;
+
+      try {
+        const res = await api('/api/answer', { qid: qid, response: val });
+        const fb = $('fb-q-' + qid);
+        fb.style.display = 'block';
+        if (res.correct) {
+          fb.className = 'quiz-feedback correct';
+          fb.innerHTML = `<b>✔ Correct!</b> ${res.feedback || ''} (Topic Mastery: ${(res.mastery*100).toFixed(0)}%)`;
+        } else {
+          fb.className = 'quiz-feedback incorrect';
+          fb.innerHTML = `<b>✘ Incorrect.</b> Answer: <b>${res.answer}</b>. ${res.feedback || ''} (Topic Mastery: ${(res.mastery*100).toFixed(0)}%)`;
+        }
+      } catch (e) {
+        alert('Failed to submit answer: ' + e);
+      }
+    }
+
+    // Dashboard Loader
+    async function loadDashboard() {
+      try {
+        const [topics, rep, stat] = await Promise.all([
+          api('/api/topics', null, 'GET'),
+          api('/api/report', null, 'GET'),
+          api('/api/status', null, 'GET')
+        ]);
+
+        $('kpi-topics').textContent = topics.length;
+        $('kpi-chunks').textContent = stat.chunks || 0;
+        $('kpi-answers').textContent = stat.attempts || 0;
+        
+        let avgP = 0;
+        if (topics.length) {
+          avgP = topics.reduce((acc, t) => acc + (t.p || 0.3), 0) / topics.length;
+        }
+        $('kpi-mastery').textContent = Math.round(avgP * 100) + '%';
+
+        const tList = $('topic-list');
+        if (!topics.length) {
+          tList.innerHTML = '<div style="color:var(--text-muted); font-size:14px;">No topics tagged yet. Ingest documents to create your curriculum.</div>';
+        } else {
+          let html = '';
+          topics.forEach(t => {
+            const pct = Math.round(t.p * 100);
+            let colorClass = 'blue';
+            if (pct >= 70) colorClass = '';
+            else if (pct >= 40) colorClass = 'amber';
+
+            html += `
+              <div class="topic-row">
+                <div class="topic-header">
+                  <div class="topic-name">${t.name}</div>
+                  <div class="topic-stat">${pct}% Mastery · ${t.n || 0} answers · ${t.chunks || 0} chunks</div>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill ${colorClass}" style="width: ${pct}%;"></div>
+                </div>
+                ${t.prereqs && t.prereqs.length ? `<div class="prereqs-tag">Prerequisites: ${t.prereqs.map(p => `<span class="badge" style="font-size:11px; padding:2px 8px;">${p}</span>`).join(' ')}</div>` : ''}
+              </div>
+            `;
+          });
+          tList.innerHTML = html;
+        }
+
+        const mList = $('misconceptions-list');
+        if (rep.misconceptions && rep.misconceptions.length) {
+          let mHtml = '';
+          rep.misconceptions.forEach(m => {
+            mHtml += `
+              <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:8px; padding:12px; margin-bottom:10px;">
+                <b style="color:#9f1239;">${m.topic}:</b> <span style="color:#4c0519;">${m.misconception}</span>
+              </div>
+            `;
+          });
+          mList.innerHTML = mHtml;
+        } else {
+          mList.innerHTML = '<div style="color:var(--success); font-weight:600;">🎉 All clear! No misconceptions detected across your quiz attempts.</div>';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshStatus();
+    });
+  </script>
+</body>
+</html>
